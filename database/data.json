@@ -1,0 +1,14 @@
+{
+  "users": [],
+  "transactions": [],
+  "withdrawals": [],
+  "daily_bonus": [],
+  "settings": {
+    "rate_zor_to_uzs": "0.1",
+    "click_reward": "1",
+    "energy_cost": "1",
+    "energy_regen_per_min": "3",
+    "min_withdrawal_zor": "50000",
+    "maintenance_mode": "0"
+  }
+}

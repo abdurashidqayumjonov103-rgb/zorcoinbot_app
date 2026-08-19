@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ZorCoinBot</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0b0b0e;
+      --card-bg: rgba(22, 22, 28, 0.75);
+      --card-inner: rgba(30, 30, 40, 0.6);
+      --gold-main: #f5c400;
+      --gold-dark: #b8860b;
+      --gold-glow: rgba(245, 196, 0, 0.4);
+      --text: #ffffff;
+      --muted: #8a8a99;
+      --border: rgba(245, 196, 0, 0.15);
+      --success: #00e676;
+      --danger: #ff3d71;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .user-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1.5px solid var(--gold-main);
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .badge-gold {
+      background: linear-gradient(90deg, #d4af37, #f5c400);
+      color: #000;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    /* MAIN CONTAINER */
+    .main-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      position: relative;
+    }
+    .tab-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+    }
+    .tab-view.active {
+      display: flex;
+    }
+
+    /* 1. BOSH SAHIFA UI */
+    .balance-header {
+      text-align: center;
+      margin-top: 5px;
+    }
+    .balance-header .label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .zor-title {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--gold-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-shadow: 0 0 20px var(--gold-glow);
+    }
+    .uzs-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* 3D COIN */
+    .coin-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .coin-3d {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffd700, #b8860b 70%, #5a4500 100%);
+      box-shadow: 0 0 50px var(--gold-glow), inset 0 0 15px #fff, inset -5px -5px 15px rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.06s ease;
+    }
+    .coin-3d:active {
+      transform: scale(0.93);
+    }
+    .coin-inner-ring {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 3px dashed rgba(255,255,255,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .coin-letter {
+      font-size: 95px;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 3px 5px 10px rgba(0,0,0,0.6), 0 0 15px var(--gold-main);
+    }
+
+    /* ENERGY */
+    .energy-container {
+      width: 100%;
+      max-width: 320px;
+      margin-bottom: 10px;
+    }
+    .energy-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .energy-bar-wrap {
+      width: 100%;
+      height: 10px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 6px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .energy-bar-val {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #d4af37, #f5c400);
+      border-radius: 6px;
+      transition: width 0.2s;
+    }
+    .tap-btn-bar {
+      width: 100%;
+      max-width: 320px;
+      background: linear-gradient(90deg, #f5c400, #d4af37);
+      color: #000;
+      font-weight: 900;
+      font-size: 16px;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px var(--gold-glow);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* 2. KUNLIK BONUS */
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .section-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .bonus-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .bonus-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .bonus-card.active {
+      border-color: var(--gold-main);
+      background: rgba(245, 196, 0, 0.08);
+    }
+    .btn-claim {
+      background: var(--gold-main);
+      color: #000;
+      font-weight: 800;
+      font-size: 13px;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* 3. REFERAL */
+    .gift-box-icon {
+      font-size: 60px;
+      margin: 15px 0;
+      text-shadow: 0 0 30px var(--gold-glow);
+    }
+    .ref-link-card {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .btn-gold-action {
+      width: 100%;
+      background: var(--gold-main);
+      color: #000;
+      font-weight: 800;
+      font-size: 15px;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    .btn-gold-sub {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--gold-main);
+      color: var(--gold-main);
+      font-weight: 800;
+      font-size: 14px;
+      padding: 13px;
+      border-radius: 12px;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    /* 4. REYTING UI (TOP 3) */
+    .top-three {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 12px;
+      width: 100%;
+      margin: 20px 0;
+    }
+    .leader-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .leader-box.top1 .avatar-ring {
+      width: 75px;
+      height: 75px;
+      border: 3px solid var(--gold-main);
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+    .avatar-ring {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .crown-icon {
+      position: absolute;
+      top: -18px;
+      font-size: 20px;
+    }
+
+    /* 5. PROFIL & PUL YECHISH */
+    .card-block {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .input-box {
+      width: 100%;
+      padding: 12px;
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: #fff;
+      margin-top: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    /* TRANZAKSIYALAR */
+    .tx-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      display: flex;
+      justify-content: space-around;
+      background: var(--card-bg);
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
+    }
+    .nav-btn {
+      color: var(--muted);
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .nav-btn.active {
+      color: var(--gold-main);
+    }
+
+    /* PARTICLE */
+    .tap-pop {
+      position: absolute;
+      color: var(--gold-main);
+      font-weight: 900;
+      font-size: 24px;
+      pointer-events: none;
+      text-shadow: 0 0 10px var(--gold-glow);
+      animation: flyUp 0.7s ease-out forwards;
+    }
+    @keyframes flyUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-70px) scale(1.3); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <div class="user-tag">
+      <div class="user-avatar" id="header-avatar">👤</div>
+      <div>
+        <div id="username-val" style="font-size: 13px; font-weight: 700;">@Foydalanuvchi</div>
+        <span class="badge-gold">Gold</span>
+      </div>
+    </div>
+    <div style="font-size: 18px; color: var(--gold-main); font-weight: 900;">⚡ ZorCoin</div>
+  </header>
+
+  <!-- ASOSIY OYNALAR -->
+  <main class="main-container">
+
+    <!-- 1. BOSH SAHIFA -->
+    <div class="tab-view active" id="view-home">
+      <div class="balance-header">
+        <div class="label">Mening balansim</div>
+        <div class="zor-title">
+          <span>🪙</span> <span id="home-zor">0</span> <span>ZOR</span>
+        </div>
+        <div class="uzs-sub" id="home-uzs">≈ 0 UZS</div>
+      </div>
+
+      <div class="coin-wrapper">
+        <div class="coin-3d" id="coin-element">
+          <div class="coin-inner-ring">
+            <span class="coin-letter">Z</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="energy-container">
+        <div class="energy-info">
+          <span id="energy-stat">⚡ 1000 / 1000</span>
+          <span style="color: var(--muted);">+3 Energy / min</span>
+        </div>
+        <div class="energy-bar-wrap">
+          <div class="energy-bar-val" id="energy-progress" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <div class="tap-btn-bar">TAP 👆</div>
+    </div>
+
+    <!-- 2. KUNLIK BONUS -->
+    <div class="tab-view" id="view-bonus">
+      <div class="section-title">🎁 KUNLIK BONUS</div>
+      <div class="section-desc">Har kuni kiring va bepul bonus oling!</div>
+      
+      <div class="bonus-list" id="bonus-card-list">
+        <!-- JS orqali 7 kunlik kartalar chiqadi -->
+      </div>
+    </div>
+
+    <!-- 3. REFERAL -->
+    <div class="tab-view" id="view-ref">
+      <div class="section-title">👥 DO‘STLARNI TAKLIF QIL</div>
+      <div class="section-desc">Do‘stlaringizni taklif qiling va ko‘proq ZOR oling!</div>
+      
+      <div class="gift-box-icon">🎁</div>
+
+      <div class="ref-link-card">
+        <span id="ref-link-val">t.me/ZorCoinBot?start=...</span>
+        <span style="cursor:pointer;" onclick="copyRefLink()">📋</span>
+      </div>
+
+      <div class="card-block" style="display:flex; justify-content:space-around; text-align:center;">
+        <div>
+          <div style="font-size:12px; color:var(--muted);">Taklif qilinganlar</div>
+          <div style="font-size:20px; font-weight:800; color:var(--gold-main);" id="ref-count-val">0</div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:var(--muted);">Har bir do‘st uchun</div>
+          <div style="font-size:20px; font-weight:800; color:var(--gold-main);">+2,500 ZOR</div>
+        </div>
+      </div>
+
+      <button class="btn-gold-action" onclick="copyRefLink()">📋 Havolani nusxalash</button>
+      <button class="btn-gold-sub" onclick="shareTelegram()">📤 Telegram'da ulashish</button>
+    </div>
+
+    <!-- 4. REYTING (TOP 100) -->
+    <div class="tab-view" id="view-rank">
+      <div class="section-title">🏆 TOP REYTING</div>
+      
+      <!-- TOP 3 -->
+      <div class="top-three">
+        <div class="leader-box">
+          <div class="avatar-ring">🥈</div>
+          <div style="font-size: 11px; margin-top:4px;" id="top2-name">Azizbek</div>
+          <div style="font-size: 11px; color:var(--gold-main);" id="top2-zor">0 ZOR</div>
+        </div>
+        <div class="leader-box top1">
+          <div class="crown-icon">👑</div>
+          <div class="avatar-ring">🥇</div>
+          <div style="font-size: 12px; font-weight:800; margin-top:4px;" id="top1-name">Behruz</div>
+          <div style="font-size: 12px; color:var(--gold-main); font-weight:800;" id="top1-zor">0 ZOR</div>
+        </div>
+        <div class="leader-box">
+          <div class="avatar-ring">🥉</div>
+          <div style="font-size: 11px; margin-top:4px;" id="top3-name">Sardor</div>
+          <div style="font-size: 11px; color:var(--gold-main);" id="top3-zor">0 ZOR</div>
+        </div>
+      </div>
+
+      <div style="width:100%; flex:1; overflow-y:auto;" id="rank-list-others"></div>
+    </div>
+
+    <!-- 5. PROFIL VA TRANZAKSIYALAR -->
+    <div class="tab-view" id="view-profile">
+      <div class="user-avatar" style="width:65px; height:65px; font-size:28px; margin-bottom:8px;">👤</div>
+      <div style="font-size: 16px; font-weight:800;" id="prof-user">@Foydalanuvchi</div>
+      
+      <div class="zor-title" style="margin: 10px 0;">
+        <span id="prof-zor">0</span> <span>ZOR</span>
+      </div>
+
+      <div class="card-block">
+        <div class="stats-row"><span>Telegram ID:</span> <b id="prof-tgid">...</b></div>
+        <div class="stats-row"><span>Referallar:</span> <b id="prof-ref-cnt">0</b></div>
+        <div class="stats-row"><span>Kurs:</span> <b>10,000 ZOR = 1,000 UZS</b></div>
+      </div>
+
+      <!-- PUL YECHISH -->
+      <div class="card-block">
+        <div style="font-weight:800; color:var(--gold-main); margin-bottom:8px;">💰 PUL YECHISH</div>
+        <select class="input-box" id="wd-type">
+          <option value="Uzcard">Uzcard</option>
+          <option value="Humo">Humo</option>
+        </select>
+        <input type="text" class="input-box" id="wd-card-num" placeholder="Karta raqami (8600...)">
+        <input type="number" class="input-box" id="wd-zor-val" placeholder="ZOR miqdori (min: 50,000)">
+        <button class="btn-gold-action" style="margin-top:0;" onclick="sendWithdraw()">So‘rov yuborish</button>
+      </div>
+
+      <!-- TRANZAKSIYA TARIXI -->
+      <div class="card-block">
+        <div style="font-weight:800; color:var(--gold-main); margin-bottom:6px;">📜 TRANZAKSIYALAR</div>
+        <div id="tx-history-box" style="font-size:12px;"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- PASTKI NAVIGATSIYA -->
+  <nav class="bottom-nav">
+    <div class="nav-btn active" onclick="navigate('home')">🏠<span>Bosh sahifa</span></div>
+    <div class="nav-btn" onclick="navigate('bonus')">🎁<span>Bonus</span></div>
+    <div class="nav-btn" onclick="navigate('ref')">👥<span>Referal</span></div>
+    <div class="nav-btn" onclick="navigate('rank')">🏆<span>Reyting</span></div>
+    <div class="nav-btn" onclick="navigate('profile')">👤<span>Profil</span></div>
+  </nav>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+      tg.ready();
+    }
+
+    const API = '/api';
+    const reqHeaders = {
+      'Content-Type': 'application/json',
+      'x-telegram-init-data': tg?.initData || ''
+    };
+
+    // Boshlang'ich holat: Hammasi 0 dan boshlanadi
+    let state = {
+      zor: 0,
+      rate: 0.1,
+      energy: 1000,
+      maxEnergy: 1000,
+      userId: 0,
+      pendingTaps: 0
+    };
+
+    // API bilan ulanish
+    async function loadData() {
+      try {
+        const res = await fetch(`${API}/me`, { headers: reqHeaders });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+
+        state.zor = data.user.zor_balance || 0;
+        state.rate = data.rate_uzs || 0.1;
+        state.energy = data.user.energy !== undefined ? data.user.energy : 1000;
+        state.maxEnergy = data.user.max_energy || 1000;
+        state.userId = data.user.telegram_id;
+
+        document.getElementById('username-val').innerText = `@${data.user.username || data.user.first_name || 'Foydalanuvchi'}`;
+        document.getElementById('prof-user').innerText = `@${data.user.username || data.user.first_name || 'Foydalanuvchi'}`;
+        document.getElementById('prof-tgid').innerText = data.user.telegram_id;
+        document.getElementById('ref-link-val').innerText = `t.me/ZorCoinBot?start=${data.user.telegram_id}`;
+
+        refreshUI();
+      } catch (err) {
+        refreshUI();
+      }
+    }
+
+    function refreshUI() {
+      document.getElementById('home-zor').innerText = Math.floor(state.zor).toLocaleString();
+      document.getElementById('home-uzs').innerText = `≈ ${Math.floor(state.zor * state.rate).toLocaleString()} UZS`;
+      document.getElementById('prof-zor').innerText = Math.floor(state.zor).toLocaleString();
+      document.getElementById('energy-stat').innerText = `⚡ ${state.energy} / ${state.maxEnergy}`;
+      
+      const percent = (state.energy / state.maxEnergy) * 100;
+      document.getElementById('energy-progress').style.width = `${percent}%`;
+    }
+
+    // Tap Mexanikasi
+    const coin = document.getElementById('coin-element');
+    let tapTimer = null;
+
+    coin.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleTap(touch.clientX, touch.clientY);
+    });
+
+    function handleTap(x, y) {
+      if (state.energy <= 0) return;
+
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+      state.energy -= 1;
+      state.zor += 1;
+      state.pendingTaps += 1;
+      refreshUI();
+
+      // Particle
+      const pop = document.createElement('div');
+      pop.className = 'tap-pop';
+      pop.innerText = '+1 ZOR';
+      pop.style.left = `${x - 20}px`;
+      pop.style.top = `${y - 40}px`;
+      document.body.appendChild(pop);
+      setTimeout(() => pop.remove(), 700);
+
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(syncTaps, 400);
+    }
+
+    async function syncTaps() {
+      if (state.pendingTaps === 0) return;
+      const count = state.pendingTaps;
+      state.pendingTaps = 0;
+
+      try {
+        const res = await fetch(`${API}/tap`, {
+          method: 'POST',
+          headers: reqHeaders,
+          body: JSON.stringify({ count })
+        });
+        const data = await res.json();
+        if (data.zor_balance !== undefined) {
+          state.zor = data.zor_balance;
+          state.energy = data.energy;
+          refreshUI();
+        }
+      } catch (e) {}
+    }
+
+    // Sahifalar navigatsiyasi
+    function navigate(tab) {
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(`view-${tab}`).classList.add('active');
+
+      const tabs = ['home', 'bonus', 'ref', 'rank', 'profile'];
+      const idx = tabs.indexOf(tab);
+      if (idx !== -1) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+
+      if (tab === 'bonus') loadBonuses();
+      if (tab === 'ref') loadRefs();
+      if (tab === 'rank') loadRankings();
+      if (tab === 'profile') loadHistory();
+    }
+
+    // Bonuslar
+    const rewards = [1000, 2000, 5000, 10000, 20000, 50000, 100000];
+    function loadBonuses() {
+      const box = document.getElementById('bonus-card-list');
+      box.innerHTML = '';
+      rewards.forEach((amount, i) => {
+        const card = document.createElement('div');
+        card.className = `bonus-card ${i === 0 ? 'active' : ''}`;
+        card.innerHTML = `
+          <div>
+            <div style="font-size:12px; color:var(--muted);">${i + 1}-kun</div>
+            <div style="font-weight:800; color:var(--gold-main);">${amount.toLocaleString()} ZOR</div>
+          </div>
+          ${i === 0 ? `<button class="btn-claim" onclick="claimBonus()">Olish</button>` : `<span style="font-size:16px;">🔒</span>`}
+        `;
+        box.appendChild(card);
+      });
+    }
+
+    async function claimBonus() {
+      try {
+        const res = await fetch(`${API}/bonus/claim`, { method: 'POST', headers: reqHeaders });
+        const d = await res.json();
+        if (d.success) {
+          alert(`🎁 Tabriklaymiz! +${d.reward.toLocaleString()} ZOR berildi!`);
+          loadData();
+        } else {
+          alert(d.error || 'Bugungi bonus olingan');
+        }
+      } catch (e) {
+        alert('Bonus olindi');
+      }
+    }
+
+    // Referal
+    async function loadRefs() {
+      try {
+        const res = await fetch(`${API}/referrals`, { headers: reqHeaders });
+        const d = await res.json();
+        document.getElementById('ref-count-val').innerText = d.count || 0;
+        document.getElementById('prof-ref-cnt').innerText = d.count || 0;
+      } catch (e) {}
+    }
+    function copyRefLink() {
+      const link = `https://t.me/ZorCoinBot?start=${state.userId}`;
+      navigator.clipboard?.writeText(link);
+      alert('Referal havola nusxalandi!');
+    }
+    function shareTelegram() {
+      const link = `https://t.me/ZorCoinBot?start=${state.userId}`;
+      const msg = `⚡ ZorCoinBot'da ZOR yig'ing va real pul ishlang!`;
+      if (tg?.openTelegramLink) {
+        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(msg)}`);
+      } else {
+        copyRefLink();
+      }
+    }
+
+    // Reyting
+    async function loadRankings() {
+      try {
+        const res = await fetch(`${API}/leaderboard`, { headers: reqHeaders });
+        const d = await res.json();
+        if (d.top && d.top.length > 0) {
+          if (d.top[0]) {
+            document.getElementById('top1-name').innerText = d.top[0].first_name || 'User';
+            document.getElementById('top1-zor').innerText = `${Math.floor(d.top[0].zor_balance).toLocaleString()} ZOR`;
+          }
+          if (d.top[1]) {
+            document.getElementById('top2-name').innerText = d.top[1].first_name || 'User';
+            document.getElementById('top2-zor').innerText = `${Math.floor(d.top[1].zor_balance).toLocaleString()} ZOR`;
+          }
+          if (d.top[2]) {
+            document.getElementById('top3-name').innerText = d.top[2].first_name || 'User';
+            document.getElementById('top3-zor').innerText = `${Math.floor(d.top[2].zor_balance).toLocaleString()} ZOR`;
+          }
+
+          const others = document.getElementById('rank-list-others');
+          others.innerHTML = '';
+          d.top.slice(3).forEach((u, idx) => {
+            const row = document.createElement('div');
+            row.className = 'card-block';
+            row.style.display = 'flex';
+            row.style.justifyContent = 'space-between';
+            row.style.padding = '10px 14px';
+            row.innerHTML = `<span>#${idx + 4} ${u.first_name || 'User'}</span> <b style="color:var(--gold-main);">${Math.floor(u.zor_balance).toLocaleString()} ZOR</b>`;
+            others.appendChild(row);
+          });
+        }
+      } catch (e) {}
+    }
+
+    // Pul yechish
+    async function sendWithdraw() {
+      const method = document.getElementById('wd-type').value;
+      const recipient = document.getElementById('wd-card-num').value;
+      const amount_zor = document.getElementById('wd-zor-val').value;
+
+      if (!recipient) return alert('Karta raqamini kiriting!');
+      if (!amount_zor || amount_zor < 50000) return alert('Minimal miqdor: 50,000 ZOR');
+
+      try {
+        const res = await fetch(`${API}/withdraw`, {
+          method: 'POST',
+          headers: reqHeaders,
+          body: JSON.stringify({ method, recipient, amount_zor })
+        });
+        const d = await res.json();
+        if (d.success) {
+          alert('✅ Yechish so‘rovi adminga yuborildi!');
+          loadData();
+          loadHistory();
+        } else {
+          alert(d.error || 'Xatolik yuz berdi');
+        }
+      } catch (e) {
+        alert('Serverga ulanib bo‘lmadi');
+      }
+    }
+
+    // Tranzaksiyalar
+    async function loadHistory() {
+      try {
+        const res = await fetch(`${API}/transactions`, { headers: reqHeaders });
+        const list = await res.json();
+        const box = document.getElementById('tx-history-box');
+        box.innerHTML = '';
+        if (!list || list.length === 0) {
+          box.innerHTML = '<span style="color:var(--muted);">Hozircha tranzaksiyalar yo‘q</span>';
+          return;
+        }
+        list.slice(0, 5).forEach(tx => {
+          const div = document.createElement('div');
+          div.className = 'tx-item';
+          div.innerHTML = `<span>${tx.type}</span> <b style="color:${tx.type === 'Withdrawal' ? 'var(--danger)' : 'var(--success)'};">${tx.type === 'Withdrawal' ? '-' : '+'}${tx.amount.toLocaleString()} ZOR</b>`;
+          box.appendChild(div);
+        });
+      } catch (e) {}
+    }
+
+    window.onload = loadData;
+  </script>
+</body>
+</html>
