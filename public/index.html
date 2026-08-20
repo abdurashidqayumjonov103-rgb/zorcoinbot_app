@@ -702,21 +702,24 @@ async function syncTaps() {
     }
 
     async function claimBonus() {
-      try {
-        const res = await fetch(`${API}/bonus/claim`, { method: 'POST', headers: reqHeaders });
-        const d = await res.json();
-        if (d.success) {
-          alert(`🎁 Tabriklaymiz! +${d.reward.toLocaleString()} ZOR berildi!`);
-          loadData();
-        } else {
-          alert(d.error || 'Bugungi bonus olingan');
-        }
-      } catch (e) {
-        alert('Bonus olindi');
-      }
+  try {
+    const res = await fetch(`${API}/bonus/claim`, { method: "POST", headers: reqHeaders });
+    const d = await res.json();
+    if (d.success) {
+      if (d.reward) state.zor = (Number(state.zor) || 0) + Number(d.reward);
+      if (d.user && d.user.zor_balance !== undefined) state.zor = Math.max(state.zor, Number(d.user.zor_balance));
+      refreshUI();
+      loadBonuses();
+      alert(`🎁 Tabriklaymiz! +${(d.reward || 0).toLocaleString()} ZOR berildi!`);
+    } else {
+      alert(d.error || "Bugungi bonus olingan");
     }
+  } catch (e) {
+    alert("Bonus olishda xatolik yuz berdi");
+  }
+}
 
-    // Referal
+// Referal
     async function loadRefs() {
       try {
         const res = await fetch(`${API}/referrals`, { headers: reqHeaders });
