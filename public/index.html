@@ -639,29 +639,33 @@
       tapTimer = setTimeout(syncTaps, 400);
     }
 
-    async function syncTaps() {
-      if (state.pendingTaps === 0) return;
-      const count = state.pendingTaps;
-      state.pendingTaps = 0;
-
-      try {
-        const res = await fetch(`${API}/tap`, {
-          method: 'POST',
-          headers: reqHeaders,
-          body: JSON.stringify({ count })
-        });
-            const data = await res.json();
-   const serverBalance = data.user?.zor_balance ?? data.zor_balance;
-if (serverBalance !== undefined) {
-  state.zor = Number(serverBalance) + (state.pendingTaps || 0);
+    let isSyncing = false;
+async function syncTaps() {
+  if (state.pendingTaps === 0 || isSyncing) return;
+  isSyncing = true;
+  const count = state.pendingTaps;
+  state.pendingTaps = 0;
+  try {
+    const res = await fetch(`${API}/tap`, {
+      method: "POST",
+      headers: reqHeaders,
+      body: JSON.stringify({ count })
+    });
+    const data = await res.json();
+    const serverBalance = data.user ? data.user.zor_balance : data.zor_balance;
+    if (serverBalance !== undefined) {
+      state.zor = Math.max(state.zor, Number(serverBalance) + (state.pendingTaps || 0));
     }
     refreshUI();
   } catch (e) {
     state.pendingTaps += count;
+  } finally {
+    isSyncing = false;
+    if (state.pendingTaps > 0) setTimeout(syncTaps, 200);
   }
-    }
+}
 
-    // Sahifalar navigatsiyasi
+// Sahifalar navigatsiyasi
     function navigate(tab) {
       document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
