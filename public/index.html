@@ -564,7 +564,7 @@
 
     // Boshlang'ich holat: Hammasi 0 dan boshlanadi
     let state = {
-    zor: Number(localStorage.getItem('cached_zor')) || 0,
+    zor: Number(null) || 0,
     rate: 0.1,
     energy: 1000,
     maxEnergy: 1000,
@@ -579,19 +579,19 @@
     if (!res.ok) throw new Error();
     const data = await res.json();
 
-    const serverBalance = Number(data.user && data.user.zor_balance);
-    const localBalance = Number(localStorage.getItem('cached_zor')) || 0;
-    
-    // Eng katta balansni tanlash (nolga tushib ketmasligi uchun)
-    state.zor = Math.max(serverBalance || 0, localBalance, state.zor);
-    localStorage.setItem('cached_zor', state.zor);
-
-    state.rate = data.rate_uzs || 0.1;
-    state.energy = data.user && data.user.energy !== undefined ? data.user.energy : 1000;
-    state.maxEnergy = (data.user && data.user.max_energy) || 1000;
-    state.userId = data.user && data.user.telegram_id;
-
     if (data.user) {
+      state.userId = data.user.telegram_id;
+      // Faqat shu foydalanuvchining o'z ID si bo'yicha keshlanadi
+      const userKey = 'cached_zor_' + data.user.telegram_id;
+      const serverBalance = Number(data.user.zor_balance) || 0;
+      
+      state.zor = serverBalance;
+      localStorage.setItem(userKey, state.zor);
+
+      state.rate = Number(data.rate_uzs) || 0.1;
+      state.energy = data.user.energy !== undefined ? Number(data.user.energy) : 1000;
+      state.maxEnergy = Number(data.user.max_energy) || 1000;
+
       const uVal = document.getElementById('username-val');
       if (uVal) uVal.innerText = '@' + (data.user.username || data.user.first_name || 'Foydalanuvchi');
       const pUser = document.getElementById('prof-user');
@@ -604,11 +604,11 @@
 
     refreshUI();
   } catch (err) {
-        refreshUI();
-      }
-    }
+    refreshUI();
+  }
+}
 
-    function refreshUI() {
+function refreshUI() {
       document.getElementById('home-zor').innerText = Math.floor(state.zor).toLocaleString();
       document.getElementById('home-uzs').innerText = `≈ ${Math.floor(state.zor * state.rate).toLocaleString()} UZS`;
       document.getElementById('prof-zor').innerText = Math.floor(state.zor).toLocaleString();
@@ -634,7 +634,7 @@
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
       state.energy -= 1;
-      localStorage.setItem('cached_zor', state.zor + 1); state.zor += 1;
+       state.zor += 1;
       state.pendingTaps += 1;
       refreshUI();
 
