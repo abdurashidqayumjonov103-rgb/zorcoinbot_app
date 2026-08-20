@@ -676,7 +676,7 @@ async function syncTaps() {
       const idx = tabs.indexOf(tab);
       if (idx !== -1) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
 
-      if (tab === 'bonus') loadBonuses();
+      if (tab === 'bonus') state.bonusClaimed = true; loadBonuses();
       if (tab === 'ref') loadRefs();
       if (tab === 'rank') loadRankings();
       if (tab === 'profile') loadHistory();
@@ -685,23 +685,22 @@ async function syncTaps() {
     // Bonuslar
     const rewards = [1000, 2000, 5000, 10000, 20000, 50000, 100000];
     function loadBonuses() {
-      const box = document.getElementById('bonus-card-list');
-      box.innerHTML = '';
-      rewards.forEach((amount, i) => {
-        const card = document.createElement('div');
-        card.className = `bonus-card ${i === 0 ? 'active' : ''}`;
-        card.innerHTML = `
-          <div>
-            <div style="font-size:12px; color:var(--muted);">${i + 1}-kun</div>
-            <div style="font-weight:800; color:var(--gold-main);">${amount.toLocaleString()} ZOR</div>
-          </div>
-          ${i === 0 ? `<button class="btn-claim" onclick="claimBonus()">Olish</button>` : `<span style="font-size:16px;">🔒</span>`}
-        `;
-        box.appendChild(card);
-      });
-    }
+  const box = document.getElementById('bonus-card-list');
+  if (!box) return;
+  box.innerHTML = '';
+  const claimed = state.bonusClaimed || false;
+  rewards.forEach((amount, i) => {
+    const card = document.createElement('div');
+    card.className = 'bonus-card ' + (i === 0 ? 'active' : '');
+    const btnHtml = claimed 
+      ? '<button class="btn-claim" style="background:#555;color:#aaa;cursor:not-allowed;" disabled>✅ Olindi</button>'
+      : '<button class="btn-claim" onclick="claimBonus()">Olish</button>';
+    card.innerHTML = '<div><div style="font-size:12px; color:var(--muted);">' + (i + 1) + '-kun</div><div style="font-weight:800; color:var(--gold-main);">' + amount.toLocaleString() + ' ZOR</div></div>' + (i === 0 ? btnHtml : '<span style="font-size:16px;">🔒</span>');
+    box.appendChild(card);
+  });
+}
 
-    async function claimBonus() {
+async function claimBonus() {
   try {
     const res = await fetch(`${API}/bonus/claim`, { method: "POST", headers: reqHeaders });
     const d = await res.json();
@@ -709,7 +708,7 @@ async function syncTaps() {
       if (d.reward) state.zor = (Number(state.zor) || 0) + Number(d.reward);
       if (d.user && d.user.zor_balance !== undefined) state.zor = Math.max(state.zor, Number(d.user.zor_balance));
       refreshUI();
-      loadBonuses();
+      state.bonusClaimed = true; loadBonuses();
       alert(`🎁 Tabriklaymiz! +${(d.reward || 0).toLocaleString()} ZOR berildi!`);
     } else {
       alert(d.error || "Bugungi bonus olingan");
