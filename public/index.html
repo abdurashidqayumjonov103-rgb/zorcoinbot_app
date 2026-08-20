@@ -665,7 +665,7 @@ function refreshUI() {
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
       state.energy -= 1;
-       state.zor += 1; setLocalBalance(state.zor);
+       state.zor += 1; setLocalBalance(state.zor); setLocalBalance(state.zor);
       state.pendingTaps += 1;
       refreshUI();
 
