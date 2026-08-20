@@ -88,10 +88,8 @@ function adminMiddleware(req, res, next) {
 app.get('/api/me', authMiddleware, (req, res) => {
   const regen = parseFloat(getSetting('energy_regen_per_min') || '3');
   const { currentEnergy, now } = calculateCurrentEnergy(req.user, regen);
-  
-  db.prepare('UPDATE users SET energy = ?, last_energy_update = ? WHERE telegram_id = ?')
-    .run(currentEnergy, now, req.user.telegram_id);
-
+  db.prepare('UPDATE users SET energy = ?, last_energy_update = ? WHERE telegram_id = ?').run(currentEnergy, now, req.user.telegram_id);
+  const updatedUser = db.prepare('SELECT * FROM users WHERE telegram_id = ?').get(req.user.telegram_id);
   const rate = parseFloat(getSetting('rate_zor_to_uzs') || '0.1');
   const updatedUser = db.prepare('SELECT * FROM users WHERE telegram_id = ?').get(req.user.telegram_id);
 
@@ -139,7 +137,7 @@ app.post('/api/tap', authMiddleware, (req, res) => {
     success: true,
     added_zor: addedBalance,
     energy: newEnergy,
-    zor_balance: req.user.zor_balance + addedBalance
+    zor_balance: (req.user.zor_balance || 0) + addedBalance
   });
 });
 

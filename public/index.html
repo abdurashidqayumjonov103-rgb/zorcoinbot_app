@@ -579,7 +579,7 @@
         if (!res.ok) throw new Error();
         const data = await res.json();
 
-        state.zor = data.user.zor_balance || 0;
+        state.zor = Number(data.user.zor_balance) || 0;
         state.rate = data.rate_uzs || 0.1;
         state.energy = data.user.energy !== undefined ? data.user.energy : 1000;
         state.maxEnergy = data.user.max_energy || 1000;
