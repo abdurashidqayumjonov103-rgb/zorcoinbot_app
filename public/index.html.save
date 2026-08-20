@@ -650,17 +650,11 @@
           headers: reqHeaders,
           body: JSON.stringify({ count })
         });
-            const data = await res.json();
-    if (data.user && data.user.zor_balance !== undefined) {
-      state.zor = data.user.zor_balance;
-    } else if (data.zor_balance !== undefined) {
-      state.zor = data.zor_balance;
-    }
-    refreshUI();
-  } catch (e) {
-    state.pendingTaps += count;
-  }
-
+        const data = await res.json();
+        if (data.zor_balance !== undefined) {
+          state.zor = data.zor_balance;
+          state.energy = data.energy;
+          refreshUI();
         }
       } catch (e) {}
     }
