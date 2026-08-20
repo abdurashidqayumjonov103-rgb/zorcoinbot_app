@@ -557,10 +557,13 @@
     }
 
     const API = '/api';
-    const reqHeaders = {
-      'Content-Type': 'application/json',
-      'x-telegram-init-data': tg?.initData || ''
-    };
+    function getHeaders() {
+  const initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || '';
+  return {
+    'Content-Type': 'application/json',
+    'x-telegram-init-data': initData
+  };
+}
 
     // Boshlang'ich holat: Hammasi 0 dan boshlanadi
     let state = {
@@ -575,7 +578,7 @@
     // API bilan ulanish
     async function loadData() {
   try {
-    const res = await fetch(`${API}/me`, { headers: reqHeaders });
+    const res = await fetch(`${API}/me`, { headers: getHeaders() });
     if (!res.ok) throw new Error();
     const data = await res.json();
 
@@ -660,7 +663,7 @@ async function syncTaps() {
   try {
     const res = await fetch(`${API}/tap`, {
       method: "POST",
-      headers: reqHeaders,
+      headers: getHeaders(),
       body: JSON.stringify({ count })
     });
     const data = await res.json();
@@ -714,7 +717,7 @@ async function syncTaps() {
 
 async function claimBonus() {
   try {
-    const res = await fetch(`${API}/bonus/claim`, { method: "POST", headers: reqHeaders });
+    const res = await fetch(`${API}/bonus/claim`, { method: "POST", headers: getHeaders() });
     const d = await res.json();
     if (d.success) {
       if (d.reward) state.zor = (Number(state.zor) || 0) + Number(d.reward);
@@ -733,7 +736,7 @@ async function claimBonus() {
 // Referal
     async function loadRefs() {
       try {
-        const res = await fetch(`${API}/referrals`, { headers: reqHeaders });
+        const res = await fetch(`${API}/referrals`, { headers: getHeaders() });
         const d = await res.json();
         document.getElementById('ref-count-val').innerText = d.count || 0;
         document.getElementById('prof-ref-cnt').innerText = d.count || 0;
@@ -757,7 +760,7 @@ async function claimBonus() {
     // Reyting
     async function loadRankings() {
       try {
-        const res = await fetch(`${API}/leaderboard`, { headers: reqHeaders });
+        const res = await fetch(`${API}/leaderboard`, { headers: getHeaders() });
         const d = await res.json();
         if (d.top && d.top.length > 0) {
           if (d.top[0]) {
@@ -800,7 +803,7 @@ async function claimBonus() {
       try {
         const res = await fetch(`${API}/withdraw`, {
           method: 'POST',
-          headers: reqHeaders,
+          headers: getHeaders(),
           body: JSON.stringify({ method, recipient, amount_zor })
         });
         const d = await res.json();
@@ -819,7 +822,7 @@ async function claimBonus() {
     // Tranzaksiyalar
     async function loadHistory() {
       try {
-        const res = await fetch(`${API}/transactions`, { headers: reqHeaders });
+        const res = await fetch(`${API}/transactions`, { headers: getHeaders() });
         const list = await res.json();
         const box = document.getElementById('tx-history-box');
         box.innerHTML = '';

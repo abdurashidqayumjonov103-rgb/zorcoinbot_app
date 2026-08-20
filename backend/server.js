@@ -52,23 +52,12 @@ function authMiddleware(req, res, next) {
 
   let dbUser = db.prepare('SELECT * FROM users WHERE telegram_id = ?').get(user.id);
   const now = Date.now();
-
   if (!dbUser) {
-    db.prepare(`
-      INSERT INTO users (telegram_id, username, first_name, created_at, last_activity, last_energy_update)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(user.id, user.username || '', user.first_name || '', now, now, now);
+    db.prepare('INSERT INTO users (telegram_id, username, first_name, zor_balance, energy, created_at, last_activity, last_energy_update) VALUES (?, ?, ?, 0, 1000, ?, ?, ?)').run(user.id, user.username || '', user.first_name || '', now, now, now);
     dbUser = db.prepare('SELECT * FROM users WHERE telegram_id = ?').get(user.id);
-  } else {
-    if (dbUser.is_banned) {
-      return res.status(403).json({ error: `Profilingiz bloklangan. Sabab: ${dbUser.ban_reason || 'Qoidabuzarlik'}` });
-    }
-    db.prepare('UPDATE users SET last_activity = ?, username = ?, first_name = ? WHERE telegram_id = ?')
-      .run(now, user.username || '', user.first_name || '', user.id);
   }
-
   req.user = dbUser;
-  next();
+  return next();
 }
 
 // Admin Auth Middleware
