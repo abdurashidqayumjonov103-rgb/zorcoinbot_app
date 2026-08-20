@@ -119,8 +119,7 @@ app.post('/api/tap', authMiddleware, (req, res) => {
   const newEnergy = currentEnergy - totalCost;
 
   db.prepare(`
-    UPDATE users 
-    SET zor_balance = zor_balance + ?, energy = ?, last_energy_update = ? 
+    UPDATE users SET zor_balance = CAST(COALESCE(zor_balance, 0) AS REAL) + ?, energy = ?, last_energy_update = ? 
     WHERE telegram_id = ?
   `).run(addedBalance, newEnergy, now, req.user.telegram_id);
 

@@ -550,6 +550,31 @@
   </nav>
 
   <script>
+
+function getTgUser() {
+  try {
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+      return window.Telegram.WebApp.initDataUnsafe.user;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function getUserKey() {
+  const u = getTgUser();
+  return u && u.id ? 'zor_bal_' + u.id : 'zor_bal_default';
+}
+
+function getLocalBalance() {
+  const key = getUserKey();
+  return Number(localStorage.getItem(key)) || 0;
+}
+
+function setLocalBalance(val) {
+  const key = getUserKey();
+  localStorage.setItem(key, String(val));
+}
+
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.expand();
@@ -577,38 +602,41 @@
 
     // API bilan ulanish
     async function loadData() {
+  const tgUser = getTgUser();
+  const localVal = getLocalBalance();
+  if (localVal > 0) {
+    state.zor = localVal;
+  }
+  
   try {
     const res = await fetch(`${API}/me`, { headers: getHeaders() });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      if (data.user) {
+        state.userId = data.user.telegram_id;
+        const serverBal = Number(data.user.zor_balance) || 0;
+        state.zor = Math.max(serverBal, localVal);
+        setLocalBalance(state.zor);
 
-    if (data.user) {
-      state.userId = data.user.telegram_id;
-      // Faqat shu foydalanuvchining o'z ID si bo'yicha keshlanadi
-      const userKey = 'cached_zor_' + data.user.telegram_id;
-      const serverBalance = Number(data.user.zor_balance) || 0;
-      
-      state.zor = serverBalance;
-      localStorage.setItem(userKey, state.zor);
+        state.rate = Number(data.rate_uzs) || 0.1;
+        state.energy = data.user.energy !== undefined ? Number(data.user.energy) : 1000;
+        state.maxEnergy = Number(data.user.max_energy) || 1000;
 
-      state.rate = Number(data.rate_uzs) || 0.1;
-      state.energy = data.user.energy !== undefined ? Number(data.user.energy) : 1000;
-      state.maxEnergy = Number(data.user.max_energy) || 1000;
-
-      const uVal = document.getElementById('username-val');
-      if (uVal) uVal.innerText = '@' + (data.user.username || data.user.first_name || 'Foydalanuvchi');
-      const pUser = document.getElementById('prof-user');
-      if (pUser) pUser.innerText = '@' + (data.user.username || data.user.first_name || 'Foydalanuvchi');
-      const pTgid = document.getElementById('prof-tgid');
-      if (pTgid) pTgid.innerText = data.user.telegram_id;
-      const refLink = document.getElementById('ref-link-val');
-      if (refLink) refLink.innerText = 't.me/ZorCoinBot?start=' + data.user.telegram_id;
+        const uVal = document.getElementById('username-val');
+        if (uVal) uVal.innerText = '@' + (data.user.username || data.user.first_name || 'Foydalanuvchi');
+        const pUser = document.getElementById('prof-user');
+        if (pUser) pUser.innerText = '@' + (data.user.username || data.user.first_name || 'Foydalanuvchi');
+        const pTgid = document.getElementById('prof-tgid');
+        if (pTgid) pTgid.innerText = data.user.telegram_id;
+        const refLink = document.getElementById('ref-link-val');
+        if (refLink) refLink.innerText = 't.me/ZorCoinBot?start=' + data.user.telegram_id;
+      }
     }
-
-    refreshUI();
   } catch (err) {
-    refreshUI();
+    console.error(err);
   }
+  refreshUI();
+}
 }
 
 function refreshUI() {
@@ -637,7 +665,7 @@ function refreshUI() {
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
       state.energy -= 1;
-       state.zor += 1;
+       state.zor += 1; setLocalBalance(state.zor);
       state.pendingTaps += 1;
       refreshUI();
 
