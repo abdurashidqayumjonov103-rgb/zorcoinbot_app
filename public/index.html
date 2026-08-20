@@ -653,7 +653,7 @@
             const data = await res.json();
    const serverBalance = data.user?.zor_balance ?? data.zor_balance;
 if (serverBalance !== undefined) {
-  state.zor = Number(serverBalance) + (state.pendingTaps || 0);}
+  state.zor = Number(serverBalance) + (state.pendingTaps || 0);
     }
     refreshUI();
   } catch (e) {
